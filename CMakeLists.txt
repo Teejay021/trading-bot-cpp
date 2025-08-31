@@ -28,8 +28,19 @@ add_executable(trading_bot
     src/utils/logger.cpp
 )
 
+# Test executable
+add_executable(test_csv
+    test_csv.cpp
+    src/data/csv_parser.cpp
+)
+
 # Include directories
 target_include_directories(trading_bot PRIVATE
+    ${CMAKE_SOURCE_DIR}/include
+    ${CMAKE_SOURCE_DIR}/src
+)
+
+target_include_directories(test_csv PRIVATE
     ${CMAKE_SOURCE_DIR}/include
     ${CMAKE_SOURCE_DIR}/src
 )
