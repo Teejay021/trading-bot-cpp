@@ -4,6 +4,7 @@
 #include <string>
 #include <vector>
 #include <memory>
+#include <map>
 
 namespace TradingBot {
 
@@ -81,6 +82,23 @@ namespace TradingBot {
     private:
         int short_period_;
         int long_period_;
+        std::vector<MarketData> price_history_;
+    };
+
+    // RSI strategy for overbought/oversold conditions
+    class RSIStrategy : public Strategy {
+    public:
+        RSIStrategy();
+        
+        bool initialize(const std::map<std::string, double>& params) override;
+        TradingSignal generate_signal(const MarketData& data, const Position& current_position) override;
+        std::map<std::string, double> get_parameters() const override;
+        bool validate_parameters(const std::map<std::string, double>& params) const override;
+        
+    private:
+        int rsi_period_;
+        double oversold_threshold_;
+        double overbought_threshold_;
         std::vector<MarketData> price_history_;
     };
 

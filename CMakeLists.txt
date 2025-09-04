@@ -17,46 +17,59 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 add_subdirectory(src)
 add_subdirectory(tests)
 
-# Main executable
-add_executable(trading_bot 
-    src/main.cpp
-    src/backtester/backtester.cpp
-    src/data/csv_parser.cpp
-    src/strategy/strategy.cpp
-    src/risk/risk_manager.cpp
-    src/reporting/report_generator.cpp
-    src/utils/logger.cpp
-)
+# Main executable (commented out until all components are ready)
+# add_executable(trading_bot 
+#     src/main.cpp
+#     src/backtester/backtester.cpp
+#     src/data/csv_parser.cpp
+#     src/strategy/strategy.cpp
+#     src/risk/risk_manager.cpp
+#     src/reporting/report_generator.cpp
+#     src/utils/logger.cpp
+# )
 
-# Test executable
+# Test executable for CSV parser
 add_executable(test_csv
     test_csv.cpp
     src/data/csv_parser.cpp
 )
 
-# Include directories
-target_include_directories(trading_bot PRIVATE
-    ${CMAKE_SOURCE_DIR}/include
-    ${CMAKE_SOURCE_DIR}/src
+# Test executable for SMA strategy
+add_executable(test_sma_strategy
+    test_sma_strategy.cpp
+    src/data/csv_parser.cpp
+    src/strategy/strategy.cpp
+    src/strategy/sma_crossover_strategy.cpp
 )
+
+# Include directories (commented out until main executable is ready)
+# target_include_directories(trading_bot PRIVATE
+#     ${CMAKE_SOURCE_DIR}/include
+#     ${CMAKE_SOURCE_DIR}/src
+# )
 
 target_include_directories(test_csv PRIVATE
     ${CMAKE_SOURCE_DIR}/include
     ${CMAKE_SOURCE_DIR}/src
 )
 
-# Link libraries
-target_link_libraries(trading_bot PRIVATE
-    csv_parser
-    strategy
-    risk_manager
-    report_generator
-    logger
+target_include_directories(test_sma_strategy PRIVATE
+    ${CMAKE_SOURCE_DIR}/include
+    ${CMAKE_SOURCE_DIR}/src
 )
 
-# Compiler flags
-if(MSVC)
-    target_compile_options(trading_bot PRIVATE /W4)
-else()
-    target_compile_options(trading_bot PRIVATE -Wall -Wextra -Wpedantic)
-endif()
+# Link libraries (commented out until main executable is ready)
+# target_link_libraries(trading_bot PRIVATE
+#     csv_parser
+#     strategy
+#     risk_manager
+#     report_generator
+#     logger
+# )
+
+# Compiler flags (commented out until main executable is ready)
+# if(MSVC)
+#     target_compile_options(trading_bot PRIVATE /W4)
+# else()
+#     target_compile_options(trading_bot PRIVATE -Wall -Wextra -Wpedantic)
+# endif()
