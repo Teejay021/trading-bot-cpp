@@ -104,4 +104,20 @@ namespace TradingBot {
         std::vector<MarketData> price_history_;
     };
 
+    // EMA strategy for exponential moving average crossover
+    class EMAStrategy : public Strategy {
+    public:
+        EMAStrategy();
+        
+        bool initialize(const std::map<std::string, double>& params) override;
+        TradingSignal generate_signal(const MarketData& data, const Position& current_position) override;
+        std::map<std::string, double> get_parameters() const override;
+        bool validate_parameters(const std::map<std::string, double>& params) const override;
+        
+    private:
+        int short_period_;
+        int long_period_;
+        std::vector<MarketData> price_history_;
+    };
+
 } // namespace TradingBot

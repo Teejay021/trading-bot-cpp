@@ -2,7 +2,7 @@
 #include <stdexcept>
 #include <iostream>
 
-// RSIStrategy Constructor
+
 TradingBot::RSIStrategy::RSIStrategy() : Strategy("RSI_STRATEGY") {
     rsi_period_ = 14;  // Default RSI period
     //Default overbought and oversold thresholds
@@ -30,7 +30,7 @@ bool TradingBot::RSIStrategy::initialize(const std::map<std::string, double>& pa
 // Generate trading signal based on current market data
 TradingBot::TradingSignal TradingBot::RSIStrategy::generate_signal(const MarketData& data, const Position& current_position) {
     TradingSignal signal;
-    signal.type = SignalType::HOLD;  // Default to HOLD
+    signal.type = SignalType::HOLD;
     signal.price = data.close;
     signal.timestamp = data.timestamp;
     
@@ -55,7 +55,6 @@ TradingBot::TradingSignal TradingBot::RSIStrategy::generate_signal(const MarketD
         signal.reason = "RSI above overbought threshold";
     }
     else{
-        signal.type = SignalType::HOLD;
         signal.reason = "RSI is between oversold and overbought thresholds";
     }
     
@@ -73,7 +72,7 @@ std::map<std::string, double> TradingBot::RSIStrategy::get_parameters() const {
     return params;
 }
 
-// Validate strategy parameters
+
 bool TradingBot::RSIStrategy::validate_parameters(const std::map<std::string, double>& params) const {
 
     auto period_it = params.find("period");
@@ -97,7 +96,6 @@ bool TradingBot::RSIStrategy::validate_parameters(const std::map<std::string, do
         return false;
     }
     
-    // Check that overbought > oversold
     if(overbought_threshold_it->second <= oversold_threshold_it->second){
         return false;
     }
