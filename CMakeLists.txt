@@ -58,6 +58,19 @@ target_include_directories(test_sma_strategy PRIVATE
     ${CMAKE_SOURCE_DIR}/src
 )
 
+# Test executable for RSI strategy
+add_executable(test_rsi_strategy
+    test_rsi_strategy.cpp
+    src/data/csv_parser.cpp
+    src/strategy/strategy.cpp
+    src/strategy/rsi_strategy.cpp
+)
+
+target_include_directories(test_rsi_strategy PRIVATE
+    ${CMAKE_SOURCE_DIR}/include
+    ${CMAKE_SOURCE_DIR}/src
+)
+
 # Link libraries (commented out until main executable is ready)
 # target_link_libraries(trading_bot PRIVATE
 #     csv_parser

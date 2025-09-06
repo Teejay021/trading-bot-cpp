@@ -9,10 +9,10 @@ int main() {
     // Load sample data
     TradingBot::CSVParser parser;
     if (!parser.load_data("data/sample_data.csv")) {
-        std::cout << "✗ Failed to load CSV data" << std::endl;
+        std::cout << " Failed to load CSV data" << std::endl;
         return 1;
     }
-    std::cout << "✓ Loaded " << parser.get_data_count() << " rows of data" << std::endl;
+    std::cout << " Loaded " << parser.get_data_count() << " rows of data" << std::endl;
     
     TradingBot::SMACrossoverStrategy strategy;
     
@@ -23,17 +23,17 @@ int main() {
     };
     
     if (!strategy.initialize(params)) {
-        std::cout << "✗ Failed to initialize strategy" << std::endl;
+        std::cout << " Failed to initialize strategy" << std::endl;
         return 1;
     }
-    std::cout << "✓ Strategy initialized with 5-day and 10-day SMAs" << std::endl;
+    std::cout << " Strategy initialized with 5-day and 10-day SMAs" << std::endl;
     
     // Test parameter validation
     if (!strategy.validate_parameters(params)) {
-        std::cout << "✗ Parameter validation failed" << std::endl;
+        std::cout << " Parameter validation failed" << std::endl;
         return 1;
     }
-    std::cout << "✓ Parameter validation passed" << std::endl;
+    std::cout << " Parameter validation passed" << std::endl;
     
     // Simulate trading signals
     TradingBot::Position position; // Start with empty position
@@ -93,6 +93,6 @@ int main() {
         std::cout << "  " << param.first << ": " << param.second << std::endl;
     }
     
-    std::cout << "\n✓ SMA Crossover Strategy test completed!" << std::endl;
+    std::cout << "\n SMA Crossover Strategy test completed!" << std::endl;
     return 0;
 }

@@ -13,6 +13,7 @@ target_include_directories(csv_parser PUBLIC
 add_library(strategy
     strategy/strategy.cpp
     strategy/sma_crossover_strategy.cpp
+    strategy/rsi_strategy.cpp
 )
 
 target_include_directories(strategy PUBLIC

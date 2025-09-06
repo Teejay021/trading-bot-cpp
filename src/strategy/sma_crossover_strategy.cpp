@@ -13,7 +13,7 @@ bool SMACrossoverStrategy::initialize(const std::map<std::string, double>& param
     auto long_it = params.find("long_period");
 
     if (short_it == params.end() || long_it == params.end()) {
-        return false;
+        throw std::invalid_argument("Missing required parameters");
     }
 
     short_period_ = static_cast<int>(short_it->second);
@@ -40,13 +40,13 @@ TradingSignal SMACrossoverStrategy::generate_signal(const MarketData& data, cons
         return signal; // Not enough data, return HOLD
     }
     
-    // Calculate current SMAs
+    
     double short_sma = calculate_sma(price_history_, short_period_);
     double long_sma = calculate_sma(price_history_, long_period_);
     
     // Calculate previous SMAs for crossover detection
     if (price_history_.size() > static_cast<size_t>(long_period_)) {
-        // Create previous data (without the last element)
+        // Previous data (without the last element)
         std::vector<MarketData> prev_data(price_history_.begin(), price_history_.end() - 1);
         
         double prev_short_sma = calculate_sma(prev_data, short_period_);
@@ -79,24 +79,24 @@ std::map<std::string, double> SMACrossoverStrategy::get_parameters() const {
 }
 
 bool SMACrossoverStrategy::validate_parameters(const std::map<std::string, double>& params) const {
-    // Check if required parameters exist
+    
     auto short_it = params.find("short_period");
     auto long_it = params.find("long_period");
     
     if (short_it == params.end() || long_it == params.end()) {
-        return false; // Missing required parameters
+        return false;
     }
     
     double short_period = short_it->second;
     double long_period = long_it->second;
 
-    // Validate parameter values
+    
     if (short_period <= 0 || long_period <= 0) {
-        return false; // Periods must be positive
+        return false;
     }
     
     if (short_period >= long_period) {
-        return false; // Short period must be less than long period
+        return false;
     }
 
     return true;
