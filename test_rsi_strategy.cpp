@@ -22,20 +22,19 @@ int main() {
         std::cout << "Data validation failed" << std::endl;
         return 1;
     }
-    
+     
     std::cout << "Data validation passed" << std::endl;
     
-    // 3. Create RSI strategy
     RSIStrategy rsi_strategy;
     
-    // 4. Set up strategy parameters
+    // 3. Set up strategy parameters
     std::map<std::string, double> params = {
         {"period", 14.0},              // 14-day RSI (standard)
         {"overbought_threshold", 70.0}, // Sell when RSI > 70
         {"oversold_threshold", 30.0}    // Buy when RSI < 30
     };
     
-    // 5. Validate parameters
+    // 4. Validate parameters
     if (!rsi_strategy.validate_parameters(params)) {
         std::cout << "Parameter validation failed" << std::endl;
         return 1;
@@ -43,7 +42,7 @@ int main() {
     
     std::cout << "Parameters validated successfully" << std::endl;
     
-    // 6. Initialize strategy
+    // 5. Initialize strategy
     if (!rsi_strategy.initialize(params)) {
         std::cout << "Strategy initialization failed" << std::endl;
         return 1;
@@ -51,14 +50,14 @@ int main() {
     
     std::cout << "RSI strategy initialized" << std::endl;
     
-    // 7. Display strategy parameters
+    // 6. Display strategy parameters
     auto current_params = rsi_strategy.get_parameters();
     std::cout << "\n Strategy Parameters:" << std::endl;
     std::cout << "   RSI Period: " << current_params["period"] << " days" << std::endl;
     std::cout << "   Overbought Threshold: " << current_params["overbought_threshold"] << std::endl;
     std::cout << "   Oversold Threshold: " << current_params["oversold_threshold"] << std::endl;
     
-    // 8. Simulate trading signals
+    // 7. Simulate trading signals
     std::cout << "\n Generating trading signals..." << std::endl;
     
     Position current_position;

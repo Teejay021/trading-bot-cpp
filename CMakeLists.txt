@@ -66,7 +66,20 @@ add_executable(test_rsi_strategy
     src/strategy/rsi_strategy.cpp
 )
 
+# Test executable for EMA strategy
+add_executable(test_ema_strategy
+    test_ema_strategy.cpp
+    src/data/csv_parser.cpp
+    src/strategy/strategy.cpp
+    src/strategy/ema_strategy.cpp
+)
+
 target_include_directories(test_rsi_strategy PRIVATE
+    ${CMAKE_SOURCE_DIR}/include
+    ${CMAKE_SOURCE_DIR}/src
+)
+
+target_include_directories(test_ema_strategy PRIVATE
     ${CMAKE_SOURCE_DIR}/include
     ${CMAKE_SOURCE_DIR}/src
 )
