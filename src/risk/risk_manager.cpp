@@ -44,6 +44,7 @@ bool RiskManager::validate_trade(const TradingSignal& signal, const PortfolioSta
     
     
     if (!check_daily_loss_limit(portfolio)) {
+    
         return false;
     }
     
@@ -195,9 +196,7 @@ double RiskManager::calculate_atr(const std::vector<MarketData>& data, int perio
         throw std::invalid_argument("Not enough data to calculate ATR");
     }
     
-    // TODO: Implement ATR calculation
-    // 1. Calculate True Range for each period
-    // 2. Calculate Simple Moving Average of True Ranges
+    // Calculate True Range for each period and average them
     
     std::vector<double> true_ranges;
     
