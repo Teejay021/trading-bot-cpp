@@ -97,6 +97,21 @@ target_include_directories(test_risk_manager PRIVATE
     ${CMAKE_SOURCE_DIR}/src
 )
 
+# Test executable for Backtester
+add_executable(test_backtester
+    test_backtester.cpp
+    src/data/csv_parser.cpp
+    src/strategy/strategy.cpp
+    src/strategy/sma_crossover_strategy.cpp
+    src/risk/risk_manager.cpp
+    src/backtester/backtester.cpp
+)
+
+target_include_directories(test_backtester PRIVATE
+    ${CMAKE_SOURCE_DIR}/include
+    ${CMAKE_SOURCE_DIR}/src
+)
+
 # Link libraries (commented out until main executable is ready)
 # target_link_libraries(trading_bot PRIVATE
 #     csv_parser

@@ -39,6 +39,7 @@ int main() {
         std::cout << "Position size calculated: " << position_size << " shares" << std::endl;
         std::cout << "Total cost: $" << (position_size * signal.price) << std::endl;
         
+
         signal.quantity = position_size;
         
         // Test portfolio update
