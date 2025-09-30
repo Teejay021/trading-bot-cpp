@@ -7,6 +7,9 @@
 #include "backtester/backtester.h"
 #include "reporting/report_generator.h"
 #include "utils/logger.h"
+#include <string>
+#include <map>
+#include <memory>
 
 namespace TradingBot {
     // Main trading bot class that orchestrates all components
@@ -36,5 +39,14 @@ namespace TradingBot {
         std::unique_ptr<Logger> logger_;
         
         BacktestResults results_;
+        std::map<std::string, std::map<std::string, std::string>> config_data_;
+        
+        // Helper methods
+        std::unique_ptr<Strategy> create_strategy(const std::string& strategy_name);
+        std::map<std::string, double> get_strategy_parameters(const std::string& strategy_name);
+        bool load_configuration(const std::string& config_file);
+        RiskParameters load_risk_parameters();
+        BacktestConfig load_backtest_config();
+        std::map<std::string, std::map<std::string, std::string>> parse_simple_json(const std::string& json_content);
     };
 }
