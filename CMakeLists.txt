@@ -112,6 +112,64 @@ target_include_directories(test_backtester PRIVATE
     ${CMAKE_SOURCE_DIR}/src
 )
 
+# Test executable for complete TradingBot integration
+add_executable(test_trading_bot
+    test_trading_bot.cpp
+    src/data/csv_parser.cpp
+    src/strategy/strategy.cpp
+    src/strategy/sma_crossover_strategy.cpp
+    src/strategy/ema_strategy.cpp
+    src/strategy/rsi_strategy.cpp
+    src/risk/risk_manager.cpp
+    src/backtester/backtester.cpp
+    src/trading_bot.cpp
+)
+
+target_include_directories(test_trading_bot PRIVATE
+    ${CMAKE_SOURCE_DIR}/include
+    ${CMAKE_SOURCE_DIR}/src
+)
+
+# Simple test executable for TradingBot
+add_executable(test_simple_trading_bot
+    test_simple_trading_bot.cpp
+    src/data/csv_parser.cpp
+    src/strategy/strategy.cpp
+    src/strategy/sma_crossover_strategy.cpp
+    src/strategy/ema_strategy.cpp
+    src/strategy/rsi_strategy.cpp
+    src/risk/risk_manager.cpp
+    src/backtester/backtester.cpp
+    src/trading_bot.cpp
+    src/utils/logger.cpp
+    src/reporting/report_generator.cpp
+)
+
+target_include_directories(test_simple_trading_bot PRIVATE
+    ${CMAKE_SOURCE_DIR}/include
+    ${CMAKE_SOURCE_DIR}/src
+)
+
+# Complete system test executable
+add_executable(test_complete_system
+    test_complete_system.cpp
+    src/data/csv_parser.cpp
+    src/strategy/strategy.cpp
+    src/strategy/sma_crossover_strategy.cpp
+    src/strategy/ema_strategy.cpp
+    src/strategy/rsi_strategy.cpp
+    src/risk/risk_manager.cpp
+    src/backtester/backtester.cpp
+    src/trading_bot.cpp
+    src/utils/logger.cpp
+    src/reporting/report_generator.cpp
+)
+
+target_include_directories(test_complete_system PRIVATE
+    ${CMAKE_SOURCE_DIR}/include
+    ${CMAKE_SOURCE_DIR}/src
+)
+
 # Link libraries (commented out until main executable is ready)
 # target_link_libraries(trading_bot PRIVATE
 #     csv_parser

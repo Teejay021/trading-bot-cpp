@@ -5,7 +5,7 @@
 #include <stdexcept>
 #include <iostream>
 
-// For JSON parsing (simple approach)
+
 #include <map>
 #include <string>
 
@@ -90,7 +90,11 @@ bool TradingBot::run_backtest(const std::string& data_file, const std::string& s
         LOG_INFO("Initialized strategy: " + strategy_name);
         
         
-        results_ = backtester_->run_backtest(strategy_, csv_parser_, risk_manager_);
+        results_ = backtester_->run_backtest(
+            std::shared_ptr<Strategy>(strategy_.release()),
+            std::shared_ptr<CSVParser>(csv_parser_.release()),
+            std::shared_ptr<RiskManager>(risk_manager_.release())
+        );
         
         LOG_INFO("Backtest completed successfully");
         LOG_INFO("Total trades: " + std::to_string(results_.total_trades));
@@ -176,47 +180,11 @@ std::map<std::string, double> TradingBot::get_strategy_parameters(const std::str
             {"long_period", 30.0}
         };
         
-        // Override with config file values if available
-        try {
-            if (config_data_.find("strategies") != config_data_.end()) {
-                auto& strategies = config_data_["strategies"];
-                if (strategies.find("SMA_CROSSOVER") != strategies.end()) {
-                    auto& sma_config = strategies["SMA_CROSSOVER"];
-                    if (sma_config.find("short_period") != sma_config.end()) {
-                        params["short_period"] = std::stod(sma_config["short_period"]);
-                    }
-                    if (sma_config.find("long_period") != sma_config.end()) {
-                        params["long_period"] = std::stod(sma_config["long_period"]);
-                    }
-                }
-            }
-        } catch (const std::exception& e) {
-            LOG_WARNING("Error loading SMA config, using defaults: " + std::string(e.what()));
-        }
-        
     } else if (strategy_name == "EMA_CROSSOVER" || strategy_name == "EMA") {
         params = {
             {"short_period", 12.0},
             {"long_period", 26.0}
         };
-        
-        // Override with config file values if available
-        try {
-            if (config_data_.find("strategies") != config_data_.end()) {
-                auto& strategies = config_data_["strategies"];
-                if (strategies.find("EMA_CROSSOVER") != strategies.end()) {
-                    auto& ema_config = strategies["EMA_CROSSOVER"];
-                    if (ema_config.find("short_period") != ema_config.end()) {
-                        params["short_period"] = std::stod(ema_config["short_period"]);
-                    }
-                    if (ema_config.find("long_period") != ema_config.end()) {
-                        params["long_period"] = std::stod(ema_config["long_period"]);
-                    }
-                }
-            }
-        } catch (const std::exception& e) {
-            LOG_WARNING("Error loading EMA config, using defaults: " + std::string(e.what()));
-        }
         
     } else if (strategy_name == "RSI" || strategy_name == "RSI_STRATEGY") {
         params = {
@@ -225,33 +193,13 @@ std::map<std::string, double> TradingBot::get_strategy_parameters(const std::str
             {"oversold_threshold", 30.0}
         };
         
-        // Override with config file values if available
-        try {
-            if (config_data_.find("strategies") != config_data_.end()) {
-                auto& strategies = config_data_["strategies"];
-                if (strategies.find("RSI") != strategies.end()) {
-                    auto& rsi_config = strategies["RSI"];
-                    if (rsi_config.find("rsi_period") != rsi_config.end()) {
-                        params["rsi_period"] = std::stod(rsi_config["rsi_period"]);
-                    }
-                    if (rsi_config.find("overbought_threshold") != rsi_config.end()) {
-                        params["overbought_threshold"] = std::stod(rsi_config["overbought_threshold"]);
-                    }
-                    if (rsi_config.find("oversold_threshold") != rsi_config.end()) {
-                        params["oversold_threshold"] = std::stod(rsi_config["oversold_threshold"]);
-                    }
-                }
-            }
-        } catch (const std::exception& e) {
-            LOG_WARNING("Error loading RSI config, using defaults: " + std::string(e.what()));
-        }
-        
     } else {
         LOG_ERROR("Unknown strategy name: " + strategy_name);
         LOG_INFO("Available strategies: SMA_CROSSOVER, EMA_CROSSOVER, RSI");
         return {};
     }
     
+    LOG_INFO("Loaded parameters for strategy: " + strategy_name);
     return params;
 }
 
@@ -283,68 +231,20 @@ bool TradingBot::load_configuration(const std::string& config_file) {
 RiskParameters TradingBot::load_risk_parameters() {
     RiskParameters params; // Start with defaults
     
-    try {
-        // Override with config values if available
-        if (config_data_.find("risk_management") != config_data_.end()) {
-            auto& risk_config = config_data_["risk_management"];
-            
-            if (risk_config.find("max_position_size") != risk_config.end()) {
-                params.max_position_size = std::stod(risk_config["max_position_size"]);
-            }
-            if (risk_config.find("max_drawdown") != risk_config.end()) {
-                params.max_drawdown = std::stod(risk_config["max_drawdown"]);
-            }
-            if (risk_config.find("stop_loss_pct") != risk_config.end()) {
-                params.stop_loss_pct = std::stod(risk_config["stop_loss_pct"]);
-            }
-            if (risk_config.find("take_profit_pct") != risk_config.end()) {
-                params.take_profit_pct = std::stod(risk_config["take_profit_pct"]);
-            }
-            if (risk_config.find("max_daily_loss") != risk_config.end()) {
-                params.max_daily_loss = std::stod(risk_config["max_daily_loss"]);
-            }
-            if (risk_config.find("position_sizing_atr") != risk_config.end()) {
-                params.position_sizing_atr = std::stod(risk_config["position_sizing_atr"]);
-            }
-        }
-    } catch (const std::exception& e) {
-        LOG_WARNING("Error parsing risk parameters, using defaults: " + std::string(e.what()));
-    }
+    // For now, just use default values
+    // TODO: Add proper JSON config parsing later
     
+    LOG_INFO("Loaded risk parameters with default values");
     return params;
 }
 
 BacktestConfig TradingBot::load_backtest_config() {
     BacktestConfig config; // Start with defaults
     
-    try {
-        // Override with config values if available
-        if (config_data_.find("backtesting") != config_data_.end()) {
-            auto& backtest_config = config_data_["backtesting"];
-            
-            if (backtest_config.find("initial_capital") != backtest_config.end()) {
-                config.initial_capital = std::stod(backtest_config["initial_capital"]);
-            }
-            if (backtest_config.find("commission_rate") != backtest_config.end()) {
-                config.commission_rate = std::stod(backtest_config["commission_rate"]);
-            }
-            if (backtest_config.find("slippage") != backtest_config.end()) {
-                config.slippage = std::stod(backtest_config["slippage"]);
-            }
-            if (backtest_config.find("enable_short_selling") != backtest_config.end()) {
-                config.enable_short_selling = (backtest_config["enable_short_selling"] == "true");
-            }
-            if (backtest_config.find("start_date") != backtest_config.end()) {
-                config.start_date = backtest_config["start_date"];
-            }
-            if (backtest_config.find("end_date") != backtest_config.end()) {
-                config.end_date = backtest_config["end_date"];
-            }
-        }
-    } catch (const std::exception& e) {
-        LOG_WARNING("Error parsing backtest config, using defaults: " + std::string(e.what()));
-    }
+    // For now, just use default values
+    // TODO: Add proper JSON config parsing later
     
+    LOG_INFO("Loaded backtest config with default values");
     return config;
 }
 
@@ -352,7 +252,7 @@ std::map<std::string, std::map<std::string, std::string>> TradingBot::parse_simp
     std::map<std::string, std::map<std::string, std::string>> result;
     
     // Simple JSON parser for basic key-value pairs
-    // This is a basic implementation - for production use a proper JSON library
+    // This is a basic implementation - for production we shoulduse a proper JSON library
     
     std::string current_section;
     std::istringstream iss(json_content);
@@ -382,7 +282,7 @@ std::map<std::string, std::map<std::string, std::string>> TradingBot::parse_simp
             std::string key = line.substr(0, colon);
             std::string value = line.substr(colon + 1);
             
-            // Clean up key and value
+            
             key.erase(0, key.find_first_not_of(" \t\""));
             key.erase(key.find_last_not_of(" \t\",") + 1);
             value.erase(0, value.find_first_not_of(" \t\""));
