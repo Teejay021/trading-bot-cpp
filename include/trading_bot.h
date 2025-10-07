@@ -2,6 +2,7 @@
 
 // Main trading bot header that includes all components
 #include "data/csv_parser.h"
+#include "data/api_data_fetcher.h"
 #include "strategy/strategy.h"
 #include "risk/risk_manager.h"
 #include "backtester/backtester.h"
@@ -21,8 +22,29 @@ namespace TradingBot {
         // Initialize the bot with configuration
         bool initialize(const std::string& config_file);
         
-        // Run backtesting
+        // Run backtesting with CSV file
         bool run_backtest(const std::string& data_file, const std::string& strategy_name);
+        
+        // Run backtesting with API data
+        bool run_backtest_with_api(
+            const std::string& symbol,
+            const std::string& strategy_name,
+            const std::string& start_date,
+            const std::string& end_date,
+            DataInterval interval = DataInterval::DAILY
+        );
+        
+        // Fetch and save data from API
+        bool fetch_market_data(
+            const std::string& symbol,
+            const std::string& start_date,
+            const std::string& end_date,
+            const std::string& output_file,
+            DataInterval interval = DataInterval::DAILY
+        );
+        
+        // Set API provider (Alpha Vantage, Yahoo Finance, etc.)
+        bool set_api_provider(APIProvider provider);
         
         // Generate reports
         void generate_report(const std::string& output_file);
@@ -32,6 +54,7 @@ namespace TradingBot {
         
     private:
         std::unique_ptr<CSVParser> csv_parser_;
+        std::unique_ptr<APIDataFetcher> api_fetcher_;
         std::unique_ptr<Strategy> strategy_;
         std::unique_ptr<RiskManager> risk_manager_;
         std::unique_ptr<Backtester> backtester_;
@@ -40,6 +63,7 @@ namespace TradingBot {
         
         BacktestResults results_;
         std::map<std::string, std::map<std::string, std::string>> config_data_;
+        bool api_enabled_;
         
         // Helper methods
         std::unique_ptr<Strategy> create_strategy(const std::string& strategy_name);
