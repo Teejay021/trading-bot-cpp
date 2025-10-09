@@ -170,6 +170,56 @@ target_include_directories(test_complete_system PRIVATE
     ${CMAKE_SOURCE_DIR}/src
 )
 
+# Test executable for API Data Fetcher
+add_executable(test_api_data_fetcher
+    test_api_data_fetcher.cpp
+    src/data/api_data_fetcher.cpp
+)
+
+target_include_directories(test_api_data_fetcher PRIVATE
+    ${CMAKE_SOURCE_DIR}/include
+    ${CMAKE_SOURCE_DIR}/src
+)
+
+# Link WinHTTP on Windows, or libcurl on Unix-like systems
+if(WIN32)
+    target_link_libraries(test_api_data_fetcher PRIVATE winhttp)
+else()
+    find_package(CURL REQUIRED)
+    target_include_directories(test_api_data_fetcher PRIVATE ${CURL_INCLUDE_DIR})
+    target_link_libraries(test_api_data_fetcher PRIVATE ${CURL_LIBRARIES})
+endif()
+
+# Test executable for TradingBot with API integration
+add_executable(test_trading_bot_with_api
+    test_trading_bot_with_api.cpp
+    src/data/csv_parser.cpp
+    src/data/api_data_fetcher.cpp
+    src/strategy/strategy.cpp
+    src/strategy/sma_crossover_strategy.cpp
+    src/strategy/ema_strategy.cpp
+    src/strategy/rsi_strategy.cpp
+    src/risk/risk_manager.cpp
+    src/backtester/backtester.cpp
+    src/trading_bot.cpp
+    src/utils/logger.cpp
+    src/reporting/report_generator.cpp
+)
+
+target_include_directories(test_trading_bot_with_api PRIVATE
+    ${CMAKE_SOURCE_DIR}/include
+    ${CMAKE_SOURCE_DIR}/src
+)
+
+# Link WinHTTP on Windows, or libcurl on Unix-like systems
+if(WIN32)
+    target_link_libraries(test_trading_bot_with_api PRIVATE winhttp)
+else()
+    find_package(CURL REQUIRED)
+    target_include_directories(test_trading_bot_with_api PRIVATE ${CURL_INCLUDE_DIR})
+    target_link_libraries(test_trading_bot_with_api PRIVATE ${CURL_LIBRARIES})
+endif()
+
 # Link libraries (commented out until main executable is ready)
 # target_link_libraries(trading_bot PRIVATE
 #     csv_parser

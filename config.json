@@ -68,5 +68,24 @@
             "check_price_consistency": true,
             "min_volume": 0.0
         }
+    },
+    
+    "api": {
+        "default_provider": "yahoo_finance",
+        "alpha_vantage": {
+            "api_key": "demo",
+            "enabled": true,
+            "rate_limit_per_minute": 5,
+            "timeout_seconds": 30
+        },
+        "yahoo_finance": {
+            "enabled": true,
+            "timeout_seconds": 30
+        },
+        "default_symbol": "AAPL",
+        "default_interval": "daily",
+        "cache_enabled": true,
+        "auto_save_csv": true,
+        "csv_output_directory": "./data/api_downloads"
     }
 }

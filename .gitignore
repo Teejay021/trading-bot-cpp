@@ -44,6 +44,7 @@ Makefile
 logs/
 reports/
 *.log
+*.html
 
 # IDE files
 .vscode/

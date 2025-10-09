@@ -11,7 +11,7 @@
 
 namespace TradingBot {
 
-TradingBot::TradingBot() {
+TradingBot::TradingBot() : api_enabled_(false) {
     // Initialize all component pointers to nullptr
     // They will be created during initialization
 }
@@ -29,6 +29,28 @@ bool TradingBot::initialize(const std::string& config_file) {
         
         // Initialize CSV Parser
         csv_parser_ = std::make_unique<CSVParser>();
+        
+        // Initialize API Data Fetcher
+        api_fetcher_ = std::make_unique<APIDataFetcher>();
+        std::map<std::string, std::string> api_config;
+        
+        // Try to get API key from config
+        if (config_data_.find("api") != config_data_.end()) {
+            auto& api_settings = config_data_["api"];
+            if (api_settings.find("alpha_vantage_key") != api_settings.end()) {
+                api_config["alpha_vantage_key"] = api_settings["alpha_vantage_key"];
+            }
+        }
+        
+        if (api_fetcher_->initialize(api_config)) {
+            // Default to Yahoo Finance if no API key provided
+            api_fetcher_->set_provider(APIProvider::YAHOO_FINANCE);
+            api_enabled_ = true;
+            LOG_INFO("API data fetcher initialized successfully");
+        } else {
+            LOG_WARNING("API data fetcher initialization failed");
+            api_enabled_ = false;
+        }
         
         // Initialize Risk Manager with loaded or default parameters
         risk_manager_ = std::make_unique<RiskManager>();
@@ -147,6 +169,109 @@ void TradingBot::generate_report(const std::string& output_file) {
 
 const BacktestResults& TradingBot::get_results() const {
     return results_;
+}
+
+bool TradingBot::run_backtest_with_api(
+    const std::string& symbol,
+    const std::string& strategy_name,
+    const std::string& start_date,
+    const std::string& end_date,
+    DataInterval interval) {
+    
+    try {
+        if (!api_enabled_ || !api_fetcher_) {
+            LOG_ERROR("API data fetcher is not available");
+            return false;
+        }
+        
+        LOG_INFO("Fetching market data for " + symbol + " from " + start_date + " to " + end_date);
+        
+        // Fetch data from API
+        APIResponse response = api_fetcher_->fetch_data(symbol, interval, start_date, end_date);
+        
+        if (!response.success || response.data.empty()) {
+            LOG_ERROR("Failed to fetch data from API: " + response.error_message);
+            return false;
+        }
+        
+        LOG_INFO("Successfully fetched " + std::to_string(response.data.size()) + " data points");
+        
+        // Save to temporary CSV file
+        std::string temp_csv = "temp_" + symbol + "_data.csv";
+        if (!api_fetcher_->save_to_csv(response, temp_csv)) {
+            LOG_ERROR("Failed to save API data to CSV");
+            return false;
+        }
+        
+        LOG_INFO("Data saved to: " + temp_csv);
+        
+        // Run backtest with the fetched data
+        bool result = run_backtest(temp_csv, strategy_name);
+        
+        // Optionally, keep the CSV file for future use
+        // You can delete it here if you want: std::remove(temp_csv.c_str());
+        
+        return result;
+        
+    } catch (const std::exception& e) {
+        LOG_ERROR("API backtest failed: " + std::string(e.what()));
+        return false;
+    }
+}
+
+bool TradingBot::fetch_market_data(
+    const std::string& symbol,
+    const std::string& start_date,
+    const std::string& end_date,
+    const std::string& output_file,
+    DataInterval interval) {
+    
+    try {
+        if (!api_enabled_ || !api_fetcher_) {
+            LOG_ERROR("API data fetcher is not available");
+            return false;
+        }
+        
+        LOG_INFO("Fetching market data for " + symbol);
+        
+        // Fetch data from API
+        APIResponse response = api_fetcher_->fetch_data(symbol, interval, start_date, end_date);
+        
+        if (!response.success || response.data.empty()) {
+            LOG_ERROR("Failed to fetch data: " + response.error_message);
+            return false;
+        }
+        
+        LOG_INFO("Successfully fetched " + std::to_string(response.data.size()) + " data points");
+        
+        // Save to file
+        if (!api_fetcher_->save_to_csv(response, output_file)) {
+            LOG_ERROR("Failed to save data to: " + output_file);
+            return false;
+        }
+        
+        LOG_INFO("Data saved to: " + output_file);
+        return true;
+        
+    } catch (const std::exception& e) {
+        LOG_ERROR("Failed to fetch market data: " + std::string(e.what()));
+        return false;
+    }
+}
+
+bool TradingBot::set_api_provider(APIProvider provider) {
+    if (!api_enabled_ || !api_fetcher_) {
+        LOG_ERROR("API data fetcher is not available");
+        return false;
+    }
+    
+    if (api_fetcher_->set_provider(provider)) {
+        LOG_INFO("API provider changed successfully");
+        return true;
+    }
+    
+    LOG_ERROR("Failed to change API provider");
+    return false;
 }
 
 // Private helper methods
