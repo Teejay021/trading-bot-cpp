@@ -32,11 +32,14 @@ tradingBot/
 
 - **Modular Design**: Clean separation of concerns for easy testing and modification
 - **CSV Data Support**: Parse and validate market data from CSV files
+- **🆕 API Data Integration**: Fetch real-time market data from Yahoo Finance and Alpha Vantage
 - **Strategy Framework**: Extensible strategy system with base class inheritance
+- **Multiple Strategies**: SMA Crossover, EMA Crossover, RSI strategies included
 - **Risk Management**: Position sizing, stop-loss, drawdown protection
 - **Backtesting Engine**: Historical strategy simulation with realistic costs
 - **Comprehensive Reporting**: Multiple output formats (CSV, HTML, JSON)
 - **Logging System**: Detailed logging for debugging and monitoring
+- **Data Caching**: Built-in caching to minimize API calls
 
 ## Getting Started
 
@@ -45,6 +48,7 @@ tradingBot/
 - C++17 compatible compiler (GCC 7+, Clang 5+, MSVC 2017+)
 - CMake 3.16+
 - Git
+- Internet connection (for API data fetching)
 
 ### Building the Project
 
@@ -67,6 +71,17 @@ ctest --output-on-failure
 
 ### Running the Bot
 
+#### Option 1: With API Data (Recommended - No CSV needed!)
+```bash
+# Test API data fetching
+cd build/bin/Release
+./test_api_data_fetcher.exe
+
+# Run backtest with live data
+./test_trading_bot_with_api.exe
+```
+
+#### Option 2: With CSV Files
 ```bash
 # Basic usage
 ./bin/trading_bot <data_file> <strategy_name>
@@ -74,6 +89,9 @@ ctest --output-on-failure
 # Example
 ./bin/trading_bot ../data/SPY.csv SMA_CROSSOVER
 ```
+
+#### Quick Start Guide
+See `QUICKSTART_API.md` for step-by-step instructions on using the API features.
 
 ## Data Format
 
@@ -99,6 +117,18 @@ A simple moving average crossover strategy that:
 - Buys when short-term SMA crosses above long-term SMA
 - Sells when short-term SMA crosses below long-term SMA
 - Configurable periods for short and long moving averages
+
+### EMA Crossover Strategy
+Exponential moving average crossover:
+- Uses EMA instead of SMA for faster reaction to price changes
+- Better for trending markets
+- Configurable short and long periods
+
+### RSI Strategy
+Relative Strength Index momentum strategy:
+- Buys when RSI crosses below oversold threshold (default 30)
+- Sells when RSI crosses above overbought threshold (default 70)
+- Configurable period and thresholds
 
 ### Adding New Strategies
 1. Inherit from the `Strategy` base class
@@ -132,11 +162,41 @@ cd build
 ctest --output-on-failure
 ```
 
+## 🆕 New: API Data Integration
+
+Fetch real market data directly from APIs:
+
+```cpp
+#include "trading_bot.h"
+
+int main() {
+    TradingBot::TradingBot bot;
+    bot.initialize("config.json");
+    
+    // Run backtest with API data (no CSV needed!)
+    bot.run_backtest_with_api(
+        "AAPL",           // Symbol
+        "SMA_CROSSOVER",  // Strategy  
+        "2024-01-01",     // Start date
+        "2024-10-07"      // End date
+    );
+    
+    bot.generate_report("AAPL_report.html");
+    return 0;
+}
+```
+
+**Supported Providers:**
+- **Yahoo Finance** (default, no API key required)
+- **Alpha Vantage** (optional, for intraday data)
+
+**See `QUICKSTART_API.md` and `API_INTEGRATION_GUIDE.md` for details.**
+
 ## Future Enhancements
 
 - **Machine Learning Integration**: Add ML-based signal generation
 - **Paper Trading**: Simulate live trading without real money
-- **Real-time Data**: Connect to live market data feeds
+- ~~**Real-time Data**: Connect to live market data feeds~~ ✅ **DONE!**
 - **Portfolio Optimization**: Multi-asset portfolio management
 - **Advanced Analytics**: More sophisticated performance metrics
 
