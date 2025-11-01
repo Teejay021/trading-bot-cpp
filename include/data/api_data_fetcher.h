@@ -114,6 +114,7 @@ private:
     
     std::string make_request(const std::string& url);
     APIResponse parse_csv_response(const std::string& csv_response);
+    APIResponse parse_json_chart_response(const std::string& json_response);
     long long date_to_timestamp(const std::string& date);
 };
 

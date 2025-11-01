@@ -92,11 +92,11 @@ std::string http_get(const std::string& url) {
     }
     
     // Add headers to mimic a browser request
+    // Note: Do NOT request gzip encoding as we don't have decompression support yet
     std::wstring headers = 
         L"User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36\r\n"
         L"Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8\r\n"
         L"Accept-Language: en-US,en;q=0.5\r\n"
-        L"Accept-Encoding: gzip, deflate, br\r\n"
         L"Connection: keep-alive\r\n";
     
     // Send request with headers
@@ -460,7 +460,8 @@ APIResponse AlphaVantageClient::fetch_latest_quote(const std::string& symbol) {
 // ============================================================================
 
 YahooFinanceClient::YahooFinanceClient()
-    : base_url_("https://query1.finance.yahoo.com/v7/finance/download/") {
+    : base_url_("https://query1.finance.yahoo.com/v8/finance/chart/") {
+    // Using v8 chart API which has better compatibility
 }
 
 long long YahooFinanceClient::date_to_timestamp(const std::string& date) {
@@ -489,14 +490,14 @@ APIResponse YahooFinanceClient::fetch_historical_data(
     long long period1 = date_to_timestamp(start_date);
     long long period2 = date_to_timestamp(end_date);
     
-    // Build URL
+    // Build URL for v8 chart API
     std::string interval_str = "1d"; // Default to daily
     if (interval == DataInterval::WEEKLY) interval_str = "1wk";
     else if (interval == DataInterval::MONTHLY) interval_str = "1mo";
     
+    // v8 chart API format - simpler and no auth required
     std::string url = base_url_ + symbol + "?period1=" + std::to_string(period1) +
-                      "&period2=" + std::to_string(period2) + "&interval=" + interval_str +
-                      "&events=history&includeAdjustedClose=true&crumb=fake";
+                      "&period2=" + std::to_string(period2) + "&interval=" + interval_str;
     
     std::cout << "Fetching data from Yahoo Finance: " << symbol << std::endl;
     std::cout << "URL: " << url << std::endl;
@@ -512,14 +513,20 @@ APIResponse YahooFinanceClient::fetch_historical_data(
         return response;
     }
     
-    // Check for error responses
-    if (csv_response.find("404") != std::string::npos || 
-        csv_response.find("Not Found") != std::string::npos) {
-        response.error_message = "Symbol not found or API endpoint changed";
-        return response;
+    // Check if response is JSON (v8 API) or CSV (v7 API)
+    if (csv_response.find("{\"chart\"") != std::string::npos) {
+        // v8 chart API response (JSON format)
+        response = parse_json_chart_response(csv_response);
+    } else {
+        // v7 download API response (CSV format)
+        // Check for error responses
+        if (csv_response.find("404") != std::string::npos || 
+            csv_response.find("Not Found") != std::string::npos) {
+            response.error_message = "Symbol not found or API endpoint changed";
+            return response;
+        }
+        response = parse_csv_response(csv_response);
     }
-    
-    response = parse_csv_response(csv_response);
     return response;
 }
 
@@ -586,6 +593,114 @@ APIResponse YahooFinanceClient::parse_csv_response(const std::string& csv_respon
     } else {
         response.error_message = "No valid data in response (parsed " + 
                                 std::to_string(line_count) + " lines, 0 valid)";
+    }
+    
+    return response;
+}
+
+APIResponse YahooFinanceClient::parse_json_chart_response(const std::string& json_response) {
+    APIResponse response;
+    response.success = false;
+    
+    // Simple JSON parsing for v8 chart API
+    // Find the timestamps array
+    size_t timestamp_pos = json_response.find("\"timestamp\":[");
+    if (timestamp_pos == std::string::npos) {
+        response.error_message = "Could not find timestamp data in response";
+        return response;
+    }
+    
+    // Find indicators (open, high, low, close, volume)
+    size_t open_pos = json_response.find("\"open\":[", timestamp_pos);
+    size_t high_pos = json_response.find("\"high\":[", timestamp_pos);
+    size_t low_pos = json_response.find("\"low\":[", timestamp_pos);
+    size_t close_pos = json_response.find("\"close\":[", timestamp_pos);
+    size_t volume_pos = json_response.find("\"volume\":[", timestamp_pos);
+    
+    if (open_pos == std::string::npos || close_pos == std::string::npos) {
+        response.error_message = "Could not find price data in response";
+        return response;
+    }
+    
+    // Extract timestamp array
+    size_t ts_start = timestamp_pos + 13;
+    size_t ts_end = json_response.find("]", ts_start);
+    std::string timestamps_str = json_response.substr(ts_start, ts_end - ts_start);
+    
+    // Extract price arrays
+    auto extract_array = [&json_response](size_t pos) -> std::vector<double> {
+        std::vector<double> result;
+        if (pos == std::string::npos) return result;
+        
+        size_t start = json_response.find("[", pos) + 1;
+        size_t end = json_response.find("]", start);
+        std::string arr_str = json_response.substr(start, end - start);
+        
+        std::istringstream iss(arr_str);
+        std::string val;
+        while (std::getline(iss, val, ',')) {
+            try {
+                if (val.find("null") == std::string::npos && !val.empty()) {
+                    result.push_back(std::stod(val));
+                } else {
+                    result.push_back(0.0); // null values
+                }
+            } catch (...) {
+                result.push_back(0.0);
+            }
+        }
+        return result;
+    };
+    
+    std::vector<double> opens = extract_array(open_pos);
+    std::vector<double> highs = extract_array(high_pos);
+    std::vector<double> lows = extract_array(low_pos);
+    std::vector<double> closes = extract_array(close_pos);
+    std::vector<double> volumes = extract_array(volume_pos);
+    
+    // Parse timestamps
+    std::vector<long long> timestamps;
+    std::istringstream ts_stream(timestamps_str);
+    std::string ts_val;
+    while (std::getline(ts_stream, ts_val, ',')) {
+        try {
+            timestamps.push_back(std::stoll(ts_val));
+        } catch (...) {
+            continue;
+        }
+    }
+    
+    // Combine into MarketData
+    size_t count = timestamps.size();
+    if (opens.size() < count) count = opens.size();
+    if (closes.size() < count) count = closes.size();
+    
+    for (size_t i = 0; i < count; ++i) {
+        if (closes[i] > 0.0) { // Skip null/zero values
+            MarketData data;
+            
+            // Convert timestamp to date string
+            time_t t = static_cast<time_t>(timestamps[i]);
+            tm* ltm = localtime(&t);
+            char date_str[20];
+            strftime(date_str, sizeof(date_str), "%Y-%m-%d", ltm);
+            data.timestamp = date_str;
+            
+            data.open = (i < opens.size()) ? opens[i] : closes[i];
+            data.high = (i < highs.size()) ? highs[i] : closes[i];
+            data.low = (i < lows.size()) ? lows[i] : closes[i];
+            data.close = closes[i];
+            data.volume = (i < volumes.size()) ? volumes[i] : 0.0;
+            
+            response.data.push_back(data);
+        }
+    }
+    
+    if (!response.data.empty()) {
+        response.success = true;
+        std::cout << "Successfully parsed " << response.data.size() << " data points from JSON" << std::endl;
+    } else {
+        response.error_message = "No valid data found in JSON response";
     }
     
     return response;
