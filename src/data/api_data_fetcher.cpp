@@ -490,6 +490,64 @@ APIResponse YahooFinanceClient::fetch_historical_data(
     long long period1 = date_to_timestamp(start_date);
     long long period2 = date_to_timestamp(end_date);
     
+    // Calculate date range in days
+    long long days_diff = (period2 - period1) / 86400; // 86400 seconds per day
+    const long long MAX_DAYS_PER_REQUEST = 100; // Yahoo Finance limit
+    
+    // If date range is too long, split into chunks
+    if (days_diff > MAX_DAYS_PER_REQUEST) {
+        std::cout << "Date range too long (" << days_diff << " days), splitting into chunks..." << std::endl;
+        
+        APIResponse combined_response;
+        combined_response.success = true;
+        
+        long long current_start = period1;
+        int chunk_num = 0;
+        while (current_start < period2) {
+            long long current_end = current_start + (MAX_DAYS_PER_REQUEST * 86400);
+            if (current_end > period2) current_end = period2;
+            chunk_num++;
+            
+            // Convert timestamps back to date strings
+            time_t t_start = static_cast<time_t>(current_start);
+            time_t t_end = static_cast<time_t>(current_end);
+            tm* tm_start = localtime(&t_start);
+            tm* tm_end = localtime(&t_end);
+            
+            char chunk_start[20], chunk_end[20];
+            strftime(chunk_start, sizeof(chunk_start), "%Y-%m-%d", tm_start);
+            strftime(chunk_end, sizeof(chunk_end), "%Y-%m-%d", tm_end);
+            
+            std::cout << "Fetching chunk " << chunk_num << ": " << chunk_start << " to " << chunk_end 
+                      << " (" << ((current_end - current_start) / 86400) << " days)" << std::endl;
+            
+            // Recursive call for this chunk (will not split again due to size)
+            APIResponse chunk_response = fetch_historical_data(symbol, interval, chunk_start, chunk_end);
+            
+            if (chunk_response.success) {
+                // Append data from this chunk
+                combined_response.data.insert(
+                    combined_response.data.end(),
+                    chunk_response.data.begin(),
+                    chunk_response.data.end()
+                );
+            } else {
+                std::cerr << "Warning: Failed to fetch chunk " << chunk_start << " to " << chunk_end << std::endl;
+            }
+            
+            current_start = current_end;
+        }
+        
+        if (!combined_response.data.empty()) {
+            std::cout << "Successfully fetched " << combined_response.data.size() << " total data points" << std::endl;
+            return combined_response;
+        } else {
+            response.error_message = "Failed to fetch any data chunks";
+            return response;
+        }
+    }
+    
+    // Normal single request for date ranges <= 100 days
     // Build URL for v8 chart API
     std::string interval_str = "1d"; // Default to daily
     if (interval == DataInterval::WEEKLY) interval_str = "1wk";
@@ -500,13 +558,9 @@ APIResponse YahooFinanceClient::fetch_historical_data(
                       "&period2=" + std::to_string(period2) + "&interval=" + interval_str;
     
     std::cout << "Fetching data from Yahoo Finance: " << symbol << std::endl;
-    std::cout << "URL: " << url << std::endl;
     std::string csv_response = APIUtils::http_get(url);
     
     std::cout << "Response length: " << csv_response.length() << " bytes" << std::endl;
-    if (csv_response.length() < 500) {
-        std::cout << "Response content:\n" << csv_response << std::endl;
-    }
     
     if (csv_response.empty()) {
         response.error_message = "Failed to fetch data from Yahoo Finance - Empty response";
